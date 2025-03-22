@@ -16,7 +16,25 @@ The service exposes the following metrics:
 
 - `sample_external_url_up{url="..."}`: 1 if the URL returns a 200 status code, 0 otherwise
 - `sample_external_url_response_ms{url="..."}`: Response time in milliseconds
-- `sample_external_url_request_count{url="..."}`: Counter of URL check attempts
+- `sample_external_url_request_count_total{url="..."}`: Counter of URL check attempts
+
+Example output:
+```
+# HELP sample_external_url_up URL status (1 = up, 0 = down)
+# TYPE sample_external_url_up gauge
+sample_external_url_up{url="https://httpstat.us/503"} 0.0
+sample_external_url_up{url="https://httpstat.us/200"} 1.0
+
+# HELP sample_external_url_response_ms URL response time in milliseconds
+# TYPE sample_external_url_response_ms gauge
+sample_external_url_response_ms{url="https://httpstat.us/503"} 633.38
+sample_external_url_response_ms{url="https://httpstat.us/200"} 634.89
+
+# HELP sample_external_url_request_count_total Counter of URL checks
+# TYPE sample_external_url_request_count_total counter
+sample_external_url_request_count_total{url="https://httpstat.us/503"} 1.0
+sample_external_url_request_count_total{url="https://httpstat.us/200"} 1.0
+```
 
 ## Local Development
 
@@ -31,7 +49,7 @@ The service exposes the following metrics:
 
 1. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/GeorgiDimv/techhub.git
    cd url-monitor
    ```
 
@@ -44,7 +62,7 @@ The service exposes the following metrics:
 
 3. Run the service:
    ```
-   python app.py
+   python3 app.py
    ```
 
 4. Check metrics:
@@ -74,65 +92,66 @@ For easier local development, you can use Docker Compose:
 
 1. Start the service:
    ```
-   docker-compose up
+   docker compose up
    ```
 
 2. Run in the background:
    ```
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. Check logs:
    ```
-   docker-compose logs -f
+   docker compose logs -f
    ```
 
 4. Stop the service:
    ```
-   docker-compose down
+   docker compose down
    ```
 
 ## Deploying to Kubernetes
 
-### Using Helm
+### Step-by-Step Guide to Deploy with Helm
 
-1. Make sure your kubectl is configured to interact with your cluster
-
-2. Create a new Helm chart using the helm create command:
+1. Make sure your kubectl is configured to interact with your cluster:
    ```
-   helm create url-monitor
+   kubectl cluster-info
    ```
 
-3. Replace the generated template files with the custom ones from this repository:
-   - Replace `url-monitor/values.yaml` with our customized values.yaml
-   - Replace `url-monitor/templates/deployment.yaml` with our deployment template
-   - Replace `url-monitor/templates/service.yaml` with our service template
+
+2. Install the Helm chart:
+   ```
+   # For a local image or if your cluster can pull from your registry
+   helm install url-monitor ./url-monitor-chart
    
-   Note: Keep other generated files (like _helpers.tpl, NOTES.txt, etc.) as they are.
-
-3. Install the chart:
-   ```
-   helm install url-monitor ./url-monitor
+   # Or, with custom values
+   helm install url-monitor ./url-monitor-chart --set image.repository=registry/url-monitor
    ```
 
-4. Verify deployment:
+3. Check the status of your deployment:
    ```
+   # Check the release status
+   helm list
+   
+   # Check the pods are running
    kubectl get pods
-   kubectl get services
+   
+   # Check the service is created
+   kubectl get svc
    ```
 
-5. Check metrics from inside the cluster:
-   ```
-   kubectl port-forward service/url-monitor 8000:8000
-   curl http://localhost:8000
-   ```
+## Viewing Metrics
 
-### Updating the Deployment
+### Basic Method
+To view the raw metrics in Prometheus format:
 
-To update the deployment after making changes:
+```bash
+# Port-forward the service
+kubectl port-forward service/url-monitor 8000:8000
 
-```
-helm upgrade url-monitor ./url-monitor
+# View metrics in another terminal
+curl http://localhost:8000
 ```
 
 ### Cleaning Up
@@ -143,34 +162,14 @@ To remove the deployment:
 helm uninstall url-monitor
 ```
 
-## Configuring Prometheus to Scrape Metrics
-
-The Helm chart includes annotations to enable Prometheus scraping. If you have Prometheus installed in your cluster, it should automatically discover and scrape the service metrics.
-
-If you're using the Prometheus Operator, you may need to create a ServiceMonitor:
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: url-monitor
-  labels:
-    release: prometheus
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: url-monitor
-  endpoints:
-  - port: metrics
-    interval: 15s
-```
 
 ## Project Structure
 
 - `app.py`: The main Python service code
 - `requirements.txt`: Python dependencies
 - `Dockerfile`: Instructions for building the Docker image
-- `url-monitor/`: Helm chart for Kubernetes deployment
+- `docker-compose.yml`: For local development/testing
+- `url-monitor-chart/`: Helm chart for Kubernetes deployment
   - `values.yaml`: Configuration values for the Helm chart
   - `templates/`: Kubernetes manifest templates
 
