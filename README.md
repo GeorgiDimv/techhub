@@ -10,6 +10,17 @@ This service checks the status of external URLs and exposes metrics in Prometheu
 - Packaged as a Docker container
 - Deployable to Kubernetes via Helm chart
 
+
+## Project Structure
+
+- `app.py`: The main Python service code
+- `requirements.txt`: Python dependencies
+- `Dockerfile`: Instructions for building the Docker image
+- `docker-compose.yml`: For local development/testing
+- `url-monitor-chart/`: Helm chart for Kubernetes deployment
+  - `values.yaml`: Configuration values for the Helm chart
+  - `templates/`: Kubernetes manifest templates
+
 ## Metrics
 
 The service exposes the following metrics:
@@ -163,20 +174,4 @@ helm uninstall url-monitor
 ```
 
 
-## Project Structure
 
-- `app.py`: The main Python service code
-- `requirements.txt`: Python dependencies
-- `Dockerfile`: Instructions for building the Docker image
-- `docker-compose.yml`: For local development/testing
-- `url-monitor-chart/`: Helm chart for Kubernetes deployment
-  - `values.yaml`: Configuration values for the Helm chart
-  - `templates/`: Kubernetes manifest templates
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Create a new Pull Request
